@@ -1,12 +1,13 @@
-import cv2
-import numpy as np
 import multiprocessing
 import os
 import sys
-from itertools import product
 from collections import OrderedDict
-from pytracking.evaluation import Sequence, Tracker
+from itertools import product
+
+import cv2
+import numpy as np
 from ltr.data.image_loader import imwrite_indexed
+from pytracking.evaluation import Sequence, Tracker
 
 
 def _save_tracker_output(seq: Sequence, tracker: Tracker, output: dict):
