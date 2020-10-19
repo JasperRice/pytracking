@@ -1,12 +1,13 @@
-import tikzplotlib
+import json
+import os
+import pickle
+
 import matplotlib
 import matplotlib.pyplot as plt
-import os
+import tikzplotlib
 import torch
-import pickle
-import json
-from pytracking.evaluation.environment import env_settings
 from pytracking.analysis.extract_results import extract_results
+from pytracking.evaluation.environment import env_settings
 
 
 def get_plot_draw_styles():
