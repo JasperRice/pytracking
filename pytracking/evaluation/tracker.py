@@ -1,20 +1,20 @@
 import importlib
 import os
-import numpy as np
-from collections import OrderedDict
-from pytracking.evaluation.environment import env_settings
 import time
-import cv2 as cv
-from pytracking.utils.visdom import Visdom
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from pytracking.utils.plotting import draw_figure, overlay_mask
-from pytracking.utils.convert_vot_anno_to_rect import convert_vot_anno_to_rect
-from ltr.data.bounding_box_utils import masks_to_bboxes
-from pytracking.evaluation.multi_object_wrapper import MultiObjectWrapper
+from collections import OrderedDict
 from pathlib import Path
-import torch
 
+import cv2 as cv
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+from ltr.data.bounding_box_utils import masks_to_bboxes
+from pytracking.evaluation.environment import env_settings
+from pytracking.evaluation.multi_object_wrapper import MultiObjectWrapper
+from pytracking.utils.convert_vot_anno_to_rect import convert_vot_anno_to_rect
+from pytracking.utils.plotting import draw_figure, overlay_mask
+from pytracking.utils.visdom import Visdom
 
 _tracker_disp_colors = {1: (0, 255, 0), 2: (0, 0, 255), 3: (255, 0, 0),
                         4: (255, 255, 255), 5: (0, 0, 0), 6: (0, 255, 128),
