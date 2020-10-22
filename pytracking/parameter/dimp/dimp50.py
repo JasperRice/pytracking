@@ -1,11 +1,12 @@
-from pytracking.utils import TrackerParams
 from pytracking.features.net_wrappers import NetWithBackbone
+from pytracking.utils import TrackerParams
+
 
 def parameters():
     params = TrackerParams()
 
     params.debug = 0
-    params.visualization = False
+    params.visualization = True # Default: False
 
     params.use_gpu = True
 
@@ -31,8 +32,8 @@ def parameters():
     params.use_augmentation = True
     params.augmentation = {'fliplr': True,
                            'rotate': [10, -10, 45, -45],
-                           'blur': [(3,1), (1, 3), (2, 2)],
-                           'relativeshift': [(0.6, 0.6), (-0.6, 0.6), (0.6, -0.6), (-0.6,-0.6)],
+                           'blur': [(3, 1), (1, 3), (2, 2)],
+                           'relativeshift': [(0.6, 0.6), (-0.6, 0.6), (0.6, -0.6), (-0.6, -0.6)],
                            'dropout': (2, 0.2)}
 
     params.augmentation_expansion_factor = 2
