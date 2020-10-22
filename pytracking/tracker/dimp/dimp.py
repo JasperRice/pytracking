@@ -107,25 +107,36 @@ class DiMP(BaseTracker):
 
         # ------- LOCALIZATION ------- #
 
-        # Extract backbone features
+        # Step 1: Extract backbone features
+        # Usage: self.extract_backbone_features
         backbone_feat, sample_coords, im_patches = self.extract_backbone_features(im, self.get_centered_sample_pos(),
                                                                                   self.target_scale * self.params.scale_factors,
                                                                                   self.img_sample_sz)
-        # Extract classification features
+        # Step 2: Extract classification features
+        # Dependency: Step 1
+        # Usage: self.get_classification_features
         test_x = self.get_classification_features(backbone_feat)
 
-        # Location of sample
+        # Step 3: Location of sample
+        # Dependency: Step 1
+        # Usage: self.get_sample_location
         sample_pos, sample_scales = self.get_sample_location(sample_coords)
 
-        # Compute classification scores
+        # Step 4: Compute classification scores
+        # Dependency: Step 2
+        # Usage: self.classify_target
         scores_raw = self.classify_target(test_x)
 
-        # Localize the target
+        # Step 5: Localize the target
+        # Dependency: Step 3 & 4
+        # Usage: self.localize_target
         translation_vec, scale_ind, s, flag = self.localize_target(
             scores_raw, sample_pos, sample_scales)
         new_pos = sample_pos[scale_ind, :] + translation_vec
 
-        # Update position and scale
+        # Step 6: Update position and scale
+        # Dependency: Step 1 & 3 & 5
+        # Usage: self.update_state & self.refine_target_box
         if flag != 'not_found':
             if self.params.get('use_iou_net', True):
                 update_scale_flag = self.params.get(
