@@ -21,7 +21,7 @@ _tracker_disp_colors = {1: (0, 255, 0), 2: (0, 0, 255), 3: (255, 0, 0),
                         7: (123, 123, 123), 8: (255, 128, 0), 9: (128, 0, 255)}
 
 
-def trackerlist(name: str, parameter_name: str, run_ids = None, display_name: str = None):
+def trackerlist(name: str, parameter_name: str, run_ids=None, display_name: str = None):
     """Generate list of trackers.
     args:
         name: Name of tracking method.
@@ -53,21 +53,26 @@ class Tracker:
 
         env = env_settings()
         if self.run_id is None:
-            self.results_dir = '{}/{}/{}'.format(env.results_path, self.name, self.parameter_name)
-            self.segmentation_dir = '{}/{}/{}'.format(env.segmentation_path, self.name, self.parameter_name)
+            self.results_dir = '{}/{}/{}'.format(
+                env.results_path, self.name, self.parameter_name)
+            self.segmentation_dir = '{}/{}/{}'.format(
+                env.segmentation_path, self.name, self.parameter_name)
         else:
-            self.results_dir = '{}/{}/{}_{:03d}'.format(env.results_path, self.name, self.parameter_name, self.run_id)
-            self.segmentation_dir = '{}/{}/{}_{:03d}'.format(env.segmentation_path, self.name, self.parameter_name, self.run_id)
+            self.results_dir = '{}/{}/{}_{:03d}'.format(
+                env.results_path, self.name, self.parameter_name, self.run_id)
+            self.segmentation_dir = '{}/{}/{}_{:03d}'.format(
+                env.segmentation_path, self.name, self.parameter_name, self.run_id)
 
-        tracker_module_abspath = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tracker', self.name))
+        tracker_module_abspath = os.path.abspath(os.path.join(
+            os.path.dirname(__file__), '..', 'tracker', self.name))
         if os.path.isdir(tracker_module_abspath):
-            tracker_module = importlib.import_module('pytracking.tracker.{}'.format(self.name))
+            tracker_module = importlib.import_module(
+                'pytracking.tracker.{}'.format(self.name))
             self.tracker_class = tracker_module.get_tracker_class()
         else:
             self.tracker_class = None
 
         self.visdom = None
-
 
     def _init_visdom(self, visdom_info, debug):
         visdom_info = {} if visdom_info is None else visdom_info
@@ -96,7 +101,6 @@ class Tracker:
 
             elif data['key'] == 'ArrowRight' and self.pause_mode:
                 self.step = True
-
 
     def create_tracker(self, params):
         tracker = self.tracker_class(params)
@@ -136,14 +140,17 @@ class Tracker:
         is_single_object = not seq.multiobj_mode
 
         if multiobj_mode is None:
-            multiobj_mode = getattr(params, 'multiobj_mode', getattr(self.tracker_class, 'multiobj_mode', 'default'))
+            multiobj_mode = getattr(params, 'multiobj_mode', getattr(
+                self.tracker_class, 'multiobj_mode', 'default'))
 
         if multiobj_mode == 'default' or is_single_object:
             tracker = self.create_tracker(params)
         elif multiobj_mode == 'parallel':
-            tracker = MultiObjectWrapper(self.tracker_class, params, self.visdom)
+            tracker = MultiObjectWrapper(
+                self.tracker_class, params, self.visdom)
         else:
-            raise ValueError('Unknown multi object mode {}'.format(multiobj_mode))
+            raise ValueError(
+                'Unknown multi object mode {}'.format(multiobj_mode))
 
         output = self._track_sequence(tracker, seq, init_info)
         return output
@@ -217,7 +224,8 @@ class Tracker:
 
             segmentation = out['segmentation'] if 'segmentation' in out else None
             if self.visdom is not None:
-                tracker.visdom_draw_tracking(image, out['target_bbox'], segmentation)
+                tracker.visdom_draw_tracking(
+                    image, out['target_bbox'], segmentation)
             elif tracker.params.visualization:
                 self.visualize(image, out['target_bbox'], segmentation)
 
@@ -244,7 +252,8 @@ class Tracker:
         params.param_name = self.parameter_name
         self._init_visdom(visdom_info, debug_)
 
-        multiobj_mode = getattr(params, 'multiobj_mode', getattr(self.tracker_class, 'multiobj_mode', 'default'))
+        multiobj_mode = getattr(params, 'multiobj_mode', getattr(
+            self.tracker_class, 'multiobj_mode', 'default'))
 
         if multiobj_mode == 'default':
             tracker = self.create_tracker(params)
@@ -252,11 +261,14 @@ class Tracker:
                 tracker.initialize_features()
 
         elif multiobj_mode == 'parallel':
-            tracker = MultiObjectWrapper(self.tracker_class, params, self.visdom, fast_load=True)
+            tracker = MultiObjectWrapper(
+                self.tracker_class, params, self.visdom, fast_load=True)
         else:
-            raise ValueError('Unknown multi object mode {}'.format(multiobj_mode))
+            raise ValueError(
+                'Unknown multi object mode {}'.format(multiobj_mode))
 
-        assert os.path.isfile(videofilepath), "Invalid param {}".format(videofilepath)
+        assert os.path.isfile(
+            videofilepath), "Invalid param {}".format(videofilepath)
         ", videofilepath must be a valid videofile"
 
         output_boxes = []
@@ -288,7 +300,8 @@ class Tracker:
                 cv.putText(frame_disp, 'Select target ROI and press ENTER', (20, 30), cv.FONT_HERSHEY_COMPLEX_SMALL,
                            1.5, (0, 0, 0), 1)
 
-                x, y, w, h = cv.selectROI(display_name, frame_disp, fromCenter=False)
+                x, y, w, h = cv.selectROI(
+                    display_name, frame_disp, fromCenter=False)
                 init_state = [x, y, w, h]
                 tracker.initialize(frame, _build_init_info(init_state))
                 output_boxes.append(init_state)
@@ -331,7 +344,8 @@ class Tracker:
                            (0, 0, 0), 1)
 
                 cv.imshow(display_name, frame_disp)
-                x, y, w, h = cv.selectROI(display_name, frame_disp, fromCenter=False)
+                x, y, w, h = cv.selectROI(
+                    display_name, frame_disp, fromCenter=False)
                 init_state = [x, y, w, h]
                 tracker.initialize(frame, _build_init_info(init_state))
                 output_boxes.append(init_state)
@@ -344,7 +358,8 @@ class Tracker:
             if not os.path.exists(self.results_dir):
                 os.makedirs(self.results_dir)
             video_name = Path(videofilepath).stem
-            base_results_path = os.path.join(self.results_dir, 'video_{}'.format(video_name))
+            base_results_path = os.path.join(
+                self.results_dir, 'video_{}'.format(video_name))
 
             tracked_bb = np.array(output_boxes).astype(int)
             bbox_file = '{}.txt'.format(base_results_path)
@@ -368,14 +383,17 @@ class Tracker:
 
         self._init_visdom(visdom_info, debug_)
 
-        multiobj_mode = getattr(params, 'multiobj_mode', getattr(self.tracker_class, 'multiobj_mode', 'default'))
+        multiobj_mode = getattr(params, 'multiobj_mode', getattr(
+            self.tracker_class, 'multiobj_mode', 'default'))
 
         if multiobj_mode == 'default':
             tracker = self.create_tracker(params)
         elif multiobj_mode == 'parallel':
-            tracker = MultiObjectWrapper(self.tracker_class, params, self.visdom, fast_load=True)
+            tracker = MultiObjectWrapper(
+                self.tracker_class, params, self.visdom, fast_load=True)
         else:
-            raise ValueError('Unknown multi object mode {}'.format(multiobj_mode))
+            raise ValueError(
+                'Unknown multi object mode {}'.format(multiobj_mode))
 
         class UIControl:
             def __init__(self):
@@ -406,7 +424,8 @@ class Tracker:
                 tl = self.get_tl()
                 br = self.get_br()
 
-                bb = [min(tl[0], br[0]), min(tl[1], br[1]), abs(br[0] - tl[0]), abs(br[1] - tl[1])]
+                bb = [min(tl[0], br[0]), min(tl[1], br[1]),
+                      abs(br[0] - tl[0]), abs(br[1] - tl[1])]
                 return bb
 
         ui_control = UIControl()
@@ -439,7 +458,8 @@ class Tracker:
 
             # Draw box
             if ui_control.mode == 'select':
-                cv.rectangle(frame_disp, ui_control.get_tl(), ui_control.get_br(), (255, 0, 0), 2)
+                cv.rectangle(frame_disp, ui_control.get_tl(),
+                             ui_control.get_br(), (255, 0, 0), 2)
 
             if len(sequence_object_ids) > 0:
                 info['sequence_object_ids'] = sequence_object_ids
@@ -457,7 +477,8 @@ class Tracker:
 
             # Put text
             font_color = (0, 0, 0)
-            cv.putText(frame_disp, 'Select target', (20, 30), cv.FONT_HERSHEY_COMPLEX_SMALL, 1, font_color, 1)
+            cv.putText(frame_disp, 'Select target', (20, 30),
+                       cv.FONT_HERSHEY_COMPLEX_SMALL, 1, font_color, 1)
             cv.putText(frame_disp, 'Press r to reset', (20, 55), cv.FONT_HERSHEY_COMPLEX_SMALL, 1,
                        font_color, 1)
             cv.putText(frame_disp, 'Press q to quit', (20, 85), cv.FONT_HERSHEY_COMPLEX_SMALL, 1,
@@ -536,13 +557,16 @@ class Tracker:
         image = self._read_image(image_path)
 
         if output_segmentation:
-            vot_anno_mask = vot.make_full_size(vot_anno, (image.shape[1], image.shape[0]))
-            bbox = masks_to_bboxes(torch.from_numpy(vot_anno_mask), fmt='t').squeeze().tolist()
+            vot_anno_mask = vot.make_full_size(
+                vot_anno, (image.shape[1], image.shape[0]))
+            bbox = masks_to_bboxes(torch.from_numpy(
+                vot_anno_mask), fmt='t').squeeze().tolist()
         else:
             bbox = _convert_anno_to_list(vot_anno)
             vot_anno_mask = None
 
-        out = tracker.initialize(image, {'init_mask': vot_anno_mask, 'init_bbox': bbox})
+        out = tracker.initialize(
+            image, {'init_mask': vot_anno_mask, 'init_bbox': bbox})
 
         if out is None:
             out = {}
@@ -572,10 +596,10 @@ class Tracker:
 
             segmentation = out['segmentation'] if 'segmentation' in out else None
             if self.visdom is not None:
-                tracker.visdom_draw_tracking(image, out['target_bbox'], segmentation)
+                tracker.visdom_draw_tracking(
+                    image, out['target_bbox'], segmentation)
             elif tracker.params.visualization:
                 self.visualize(image, out['target_bbox'], segmentation)
-
 
     def run_vot(self, debug=None, visdom_info=None):
         params = self.get_parameters()
@@ -618,7 +642,8 @@ class Tracker:
         vot_anno_polygon = handle.region()
         vot_anno_polygon = _convert_anno_to_list(vot_anno_polygon)
 
-        init_state = convert_vot_anno_to_rect(vot_anno_polygon, tracker.params.vot_anno_conversion_type)
+        init_state = convert_vot_anno_to_rect(
+            vot_anno_polygon, tracker.params.vot_anno_conversion_type)
 
         image_path = handle.frame()
         if not image_path:
@@ -639,27 +664,28 @@ class Tracker:
             out = tracker.track(image)
             state = out['target_bbox']
 
-            handle.report(vot.Rectangle(state[0], state[1], state[2], state[3]))
+            handle.report(vot.Rectangle(
+                state[0], state[1], state[2], state[3]))
 
             segmentation = out['segmentation'] if 'segmentation' in out else None
             if self.visdom is not None:
-                tracker.visdom_draw_tracking(image, out['target_bbox'], segmentation)
+                tracker.visdom_draw_tracking(
+                    image, out['target_bbox'], segmentation)
             elif tracker.params.visualization:
                 self.visualize(image, out['target_bbox'], segmentation)
 
     def get_parameters(self):
         """Get parameters."""
-        param_module = importlib.import_module('pytracking.parameter.{}.{}'.format(self.name, self.parameter_name))
+        param_module = importlib.import_module(
+            'pytracking.parameter.{}.{}'.format(self.name, self.parameter_name))
         params = param_module.parameters()
         return params
-
 
     def init_visualization(self):
         self.pause_mode = False
         self.fig, self.ax = plt.subplots(1)
         self.fig.canvas.mpl_connect('key_press_event', self.press)
         plt.tight_layout()
-
 
     def visualize(self, image, state, segmentation=None):
         self.ax.cla()
@@ -675,12 +701,14 @@ class Tracker:
         for i, box in enumerate(boxes, start=1):
             col = _tracker_disp_colors[i]
             col = [float(c) / 255.0 for c in col]
-            rect = patches.Rectangle((box[0], box[1]), box[2], box[3], linewidth=1, edgecolor=col, facecolor='none')
+            rect = patches.Rectangle(
+                (box[0], box[1]), box[2], box[3], linewidth=1, edgecolor=col, facecolor='none')
             self.ax.add_patch(rect)
 
         if getattr(self, 'gt_state', None) is not None:
             gt_state = self.gt_state
-            rect = patches.Rectangle((gt_state[0], gt_state[1]), gt_state[2], gt_state[3], linewidth=1, edgecolor='g', facecolor='none')
+            rect = patches.Rectangle(
+                (gt_state[0], gt_state[1]), gt_state[2], gt_state[3], linewidth=1, edgecolor='g', facecolor='none')
             self.ax.add_patch(rect)
         self.ax.set_axis_off()
         self.ax.axis('equal')
@@ -705,6 +733,3 @@ class Tracker:
     def _read_image(self, image_file: str):
         im = cv.imread(image_file)
         return cv.cvtColor(im, cv.COLOR_BGR2RGB)
-
-
-
