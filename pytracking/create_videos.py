@@ -58,7 +58,7 @@ def convert_images_to_video(image_path, video_path, fps=30.0, frameSize=None, im
     cv.destroyAllWindows()
 
 
-def overlap_bbox_on_video(bbox_path, video_path, out_path=None, gt_path=None, fps=30.0):
+def overlap_bbox_on_video(bbox_path, video_path, out_path=None, gt_path=None, fps=30.0, flag=''):
     """[summary]
 
     :param bbox_path: [description]
@@ -70,7 +70,7 @@ def overlap_bbox_on_video(bbox_path, video_path, out_path=None, gt_path=None, fp
     """    
     if not out_path:
         video_path_split = video_path.split('.')
-        video_path_split[-2] += "+BBox"
+        video_path_split[-2] += "+BBox" + flag
         out_path = '.'.join(video_path_split)
         out_path = out_path.replace('mp4', 'avi')
 
@@ -106,7 +106,7 @@ def main():
     parser = argparse.ArgumentParser(description='Run converter from images to videos.')
     parser.add_argument('--tracker_name', type=str, default='dimp',help='Name of tracking method.')
     parser.add_argument('--tracker_param', type=str, default='dimp50', help='Name of parameter file.')
-    parser.add_argument('--create_method', type=str, default='image2video', help='Name of the video generation method.')
+    parser.add_argument('--create_method', type=str, default='bbox2video', help='Name of the video generation method.')
 
     args = parser.parse_args()
 
@@ -131,10 +131,11 @@ def main():
 
         for file, path in zip(file_list, path_list):
             convert_images_to_video(path, path+'/'+file+'.avi', fps=30.0, frameSize=None, image_type='jpg')
-    elif  args.create_method == 'bbox2video':
+    elif args.create_method == 'bbox2video':
+        print("Creating video from txt.")
         bbox_path = '/home/sifan/Documents/pytracking/pytracking/tracking_results/dimp/dimp50/video_Office_001_960x540.txt'
         video_path = '/home/sifan/Documents/pytracking/pytracking/datasets/Videos/Office/Office_001_960x540.mp4'
-        overlap_bbox_on_video(bbox_path, video_path)
+        overlap_bbox_on_video(bbox_path, video_path, flag='sample_memory_size=30')
 
 if __name__ == '__main__':
     main()

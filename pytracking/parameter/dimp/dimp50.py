@@ -11,10 +11,11 @@ def parameters():
     params.use_gpu = True
 
     params.image_sample_size = 18*16
-    params.search_area_scale = 5
+    params.search_area_scale = 5 # Default
 
     # Learning parameters
     params.sample_memory_size = 50
+    # params.sample_memory_size = 50 # Default
     params.learning_rate = 0.01
     params.init_samples_minimum_weight = 0.25
     params.train_skipping = 20

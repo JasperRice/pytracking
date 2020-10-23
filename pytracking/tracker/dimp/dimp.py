@@ -45,6 +45,7 @@ class DiMP(BaseTracker):
         im = numpy_to_torch(image)
 
         # Get target position and size
+        # 初始状态
         state = info['init_bbox']
         self.pos = torch.Tensor(
             [state[1] + (state[3] - 1)/2, state[0] + (state[2] - 1)/2])
@@ -85,6 +86,7 @@ class DiMP(BaseTracker):
             self.params.scale_factors = torch.Tensor(self.params.scale_factors)
 
         # Setup scale bounds
+        # self.min_scale_factor and self.max_scale_factor are used in the method update_state
         self.min_scale_factor = torch.max(10 / self.base_target_sz)
         self.max_scale_factor = torch.min(self.image_sz / self.base_target_sz)
 
@@ -574,7 +576,6 @@ class DiMP(BaseTracker):
 
     def update_state(self, new_pos, new_scale=None):
         # Update scale
-        # new_scale is None when being used, which means the self.target_sz is not updated
         if new_scale is not None:
             self.target_scale = new_scale.clamp(
                 self.min_scale_factor, self.max_scale_factor)
