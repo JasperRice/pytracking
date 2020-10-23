@@ -574,6 +574,7 @@ class DiMP(BaseTracker):
 
     def update_state(self, new_pos, new_scale=None):
         # Update scale
+        # new_scale is None when being used, which means the self.target_sz is not updated
         if new_scale is not None:
             self.target_scale = new_scale.clamp(
                 self.min_scale_factor, self.max_scale_factor)

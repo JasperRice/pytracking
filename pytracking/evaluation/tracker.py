@@ -4,11 +4,11 @@ import time
 from collections import OrderedDict
 from pathlib import Path
 
-import cv2 as cv
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from cv2 import cv2 as cv
 from ltr.data.bounding_box_utils import masks_to_bboxes
 from pytracking.evaluation.environment import env_settings
 from pytracking.evaluation.multi_object_wrapper import MultiObjectWrapper
