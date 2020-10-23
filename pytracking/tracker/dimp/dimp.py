@@ -670,6 +670,8 @@ class DiMP(BaseTracker):
 
         # Get target filter by running the discriminative model prediction module
         # Check class LinearFilter in linear_filter.py for the methods of self.net.classifier
+        # get_filter outputs the learned filter based on the input features (feat) and target boxes (bb) by running the filter initializer and optimizer
+        # get_filter is equivalent to the Model Predictor D on the paper
         with torch.no_grad():
             self.target_filter, _, losses = self.net.classifier.get_filter(x, target_boxes, num_iter=num_iter,
                                                                            compute_losses=plot_loss)
