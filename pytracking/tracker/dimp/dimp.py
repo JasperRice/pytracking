@@ -22,6 +22,8 @@ class DiMP(BaseTracker):
     def initialize_features(self):
         if not getattr(self, 'features_initialized', False):
             self.params.net.initialize()
+            # self.params.net = NetWithBackbone(net_path='dimp50.pth', use_gpu=params.use_gpu)
+            # NetWithBackbone.initialize()
         self.features_initialized = True
 
     def initialize(self, image, info: dict) -> dict:
@@ -84,6 +86,7 @@ class DiMP(BaseTracker):
         self.max_scale_factor = torch.min(self.image_sz / self.base_target_sz)
 
         # Extract and transform sample
+        # 数据增强初始图片，并输入Backbone Feature Extractor得到Initial Backbone Features
         init_backbone_feat = self.generate_init_samples(im)
 
         # Initialize classifier
@@ -213,14 +216,30 @@ class DiMP(BaseTracker):
             self.img_support_sz / (2*self.feature_sz)
 
     def classify_target(self, sample_x: TensorList):
-        """Classify target by applying the DiMP filter."""
+        """Classify target by applying the DiMP filter.
+
+        :param sample_x: [description]
+        :type sample_x: TensorList
+        :return: classification scores
+        :rtype: [type]
+        """
         with torch.no_grad():
             scores = self.net.classifier.classify(self.target_filter, sample_x)
         return scores
 
     def localize_target(self, scores, sample_pos, sample_scales):
-        """Run the target localization."""
+        """Run the target localization.
 
+        :param scores: [description]
+        :type scores: [type]
+        :param sample_pos: [description]
+        :type sample_pos: [type]
+        :param sample_scales: [description]
+        :type sample_scales: [type]
+        :raises Exception: [description]
+        :return: [description]
+        :rtype: [type]
+        """
         scores = scores.squeeze(1)
 
         preprocess_method = self.params.get('score_preprocess', 'none')
@@ -422,24 +441,24 @@ class DiMP(BaseTracker):
             'use_augmentation', True) else {}
 
         # Add all augmentations
-        if 'shift' in augs:
+        if 'shift' in augs:  # 平移
             self.transforms.extend([augmentation.Translation(
                 shift, aug_output_sz, global_shift.long().tolist()) for shift in augs['shift']])
-        if 'relativeshift' in augs:
+        if 'relativeshift' in augs:  # 相对平移
             def get_absolute(shift): return (torch.Tensor(
                 shift) * self.img_sample_sz/2).long().tolist()
             self.transforms.extend([augmentation.Translation(get_absolute(
                 shift), aug_output_sz, global_shift.long().tolist()) for shift in augs['relativeshift']])
-        if 'fliplr' in augs and augs['fliplr']:
+        if 'fliplr' in augs and augs['fliplr']:  # 水平翻转
             self.transforms.append(augmentation.FlipHorizontal(
                 aug_output_sz, get_rand_shift()))
-        if 'blur' in augs:
+        if 'blur' in augs:  # 模糊
             self.transforms.extend([augmentation.Blur(
                 sigma, aug_output_sz, get_rand_shift()) for sigma in augs['blur']])
-        if 'scale' in augs:
+        if 'scale' in augs:  # 缩放
             self.transforms.extend([augmentation.Scale(
                 scale_factor, aug_output_sz, get_rand_shift()) for scale_factor in augs['scale']])
-        if 'rotate' in augs:
+        if 'rotate' in augs:  # 选装
             self.transforms.extend([augmentation.Rotate(
                 angle, aug_output_sz, get_rand_shift()) for angle in augs['rotate']])
 
@@ -448,6 +467,7 @@ class DiMP(BaseTracker):
             im, self.init_sample_pos, self.init_sample_scale, aug_expansion_sz, self.transforms)
 
         # Extract initial backbone features
+        # torch.no_grad()中的数据不需要计算梯度和进行反响传播
         with torch.no_grad():
             init_backbone_feat = self.net.extract_backbone(im_patches)
 
