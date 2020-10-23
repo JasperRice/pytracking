@@ -70,6 +70,8 @@ class DiMP(BaseTracker):
         # 搜索区域大小: self.params.search_area_scale倍的目标区域
         search_area = torch.prod(
             self.target_sz * self.params.search_area_scale).item()
+        self.init_search_area = search_area
+
         self.target_scale = math.sqrt(
             search_area) / self.img_sample_sz.prod().sqrt()
 
@@ -129,6 +131,7 @@ class DiMP(BaseTracker):
         # Step 4: Compute classification scores
         # Dependency: Step 2
         # Usage: self.classify_target
+        # test_x: classification features
         scores_raw = self.classify_target(test_x)
 
         # Step 5: Localize the target
@@ -518,6 +521,8 @@ class DiMP(BaseTracker):
 
         # Update sample and label memory
         for train_samp, x, ind in zip(self.training_samples, sample_x, replace_ind):
+            # self.training_samples[replace_ind] = sample_x
+            # Note that self.training_samples, sample_x, and replace_ind are TensorList
             train_samp[ind:ind+1, ...] = x
 
         # Update bb memory
@@ -664,11 +669,13 @@ class DiMP(BaseTracker):
         num_iter = self.params.get('net_opt_iter', None)
 
         # Get target filter by running the discriminative model prediction module
+        # Check class LinearFilter in linear_filter.py for the methods of self.net.classifier
         with torch.no_grad():
             self.target_filter, _, losses = self.net.classifier.get_filter(x, target_boxes, num_iter=num_iter,
                                                                            compute_losses=plot_loss)
 
         # Init memory
+        # x: classification features
         if self.params.get('update_classifier', True):
             self.init_memory(TensorList([x]))
 
