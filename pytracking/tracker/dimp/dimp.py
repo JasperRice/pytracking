@@ -67,6 +67,7 @@ class DiMP(BaseTracker):
         self.img_support_sz = self.img_sample_sz
 
         # Set search area
+        # 搜索区域大小: self.params.search_area_scale倍的目标区域
         search_area = torch.prod(
             self.target_sz * self.params.search_area_scale).item()
         self.target_scale = math.sqrt(

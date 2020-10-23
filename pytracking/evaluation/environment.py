@@ -4,10 +4,12 @@ import os
 
 class EnvSettings:
     def __init__(self):
-        pytracking_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        pytracking_path = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '..'))
 
         self.results_path = '{}/tracking_results/'.format(pytracking_path)
-        self.segmentation_path = '{}/segmentation_results/'.format(pytracking_path)
+        self.segmentation_path = '{}/segmentation_results/'.format(
+            pytracking_path)
         self.network_path = '{}/networks/'.format(pytracking_path)
         self.result_plot_path = '{}/result_plots/'.format(pytracking_path)
         self.otb_path = ''
@@ -48,7 +50,8 @@ def create_default_local_file():
                 if comment_str is None:
                     f.write('    settings.{} = \'{}\'\n'.format(attr, attr_val))
                 else:
-                    f.write('    settings.{} = \'{}\'    # {}\n'.format(attr, attr_val, comment_str))
+                    f.write('    settings.{} = \'{}\'    # {}\n'.format(
+                        attr, attr_val, comment_str))
         f.write('\n    return settings\n\n')
 
 

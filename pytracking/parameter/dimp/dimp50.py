@@ -6,7 +6,7 @@ def parameters():
     params = TrackerParams()
 
     params.debug = 0
-    params.visualization = True # Default: False
+    params.visualization = False # Default: False
 
     params.use_gpu = True
 

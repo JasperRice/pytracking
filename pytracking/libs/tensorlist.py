@@ -1,12 +1,13 @@
-import functools
-import torch
 import copy
+import functools
+
+import torch
 
 
 class TensorList(list):
     """Container mainly used for lists of torch tensors. Extends lists with pytorch functionality."""
 
-    def __init__(self, list_of_tensors = None):
+    def __init__(self, list_of_tensors=None):
         if list_of_tensors is None:
             list_of_tensors = list()
         super(TensorList, self).__init__(list_of_tensors)
@@ -172,7 +173,8 @@ class TensorList(list):
 
     def __getattr__(self, name):
         if not hasattr(torch.Tensor, name):
-            raise AttributeError('\'TensorList\' object has not attribute \'{}\''.format(name))
+            raise AttributeError(
+                '\'TensorList\' object has not attribute \'{}\''.format(name))
 
         def apply_attr(*args, **kwargs):
             return TensorList([getattr(e, name)(*args, **kwargs) for e in self])
@@ -184,7 +186,6 @@ class TensorList(list):
         return isinstance(a, (TensorList, list))
 
 
-
 def tensor_operation(op):
     def islist(a):
         return isinstance(a, TensorList)
@@ -192,7 +193,8 @@ def tensor_operation(op):
     @functools.wraps(op)
     def oplist(*args, **kwargs):
         if len(args) == 0:
-            raise ValueError('Must be at least one argument without keyword (i.e. operand).')
+            raise ValueError(
+                'Must be at least one argument without keyword (i.e. operand).')
 
         if len(args) == 1:
             if islist(args[0]):

@@ -1,6 +1,7 @@
-import torch.nn as nn
-import ltr.models.layers.filter as filter_layer
 import math
+
+import ltr.models.layers.filter as filter_layer
+import torch.nn as nn
 
 
 class LinearFilter(nn.Module):
@@ -54,11 +55,13 @@ class LinearFilter(nn.Module):
             test_feat = test_feat.reshape(-1, *test_feat.shape[-3:])
 
         # Extract features
-        train_feat = self.extract_classification_feat(train_feat, num_sequences)
+        train_feat = self.extract_classification_feat(
+            train_feat, num_sequences)
         test_feat = self.extract_classification_feat(test_feat, num_sequences)
 
         # Train filter
-        filter, filter_iter, losses = self.get_filter(train_feat, train_bb, *args, **kwargs)
+        filter, filter_iter, losses = self.get_filter(
+            train_feat, train_bb, *args, **kwargs)
 
         # Classify samples using all return filters
         test_scores = [self.classify(f, test_feat) for f in filter_iter]
@@ -97,7 +100,8 @@ class LinearFilter(nn.Module):
         weights = self.filter_initializer(feat, bb)
 
         if self.filter_optimizer is not None:
-            weights, weights_iter, losses = self.filter_optimizer(weights, feat=feat, bb=bb, *args, **kwargs)
+            weights, weights_iter, losses = self.filter_optimizer(
+                weights, feat=feat, bb=bb, *args, **kwargs)
         else:
             weights_iter = [weights]
             losses = None
@@ -108,10 +112,12 @@ class LinearFilter(nn.Module):
         num_sequences = bb.shape[1]
 
         if backbone_feat.dim() == 5:
-            backbone_feat = backbone_feat.reshape(-1, *backbone_feat.shape[-3:])
+            backbone_feat = backbone_feat.reshape(-1,
+                                                  *backbone_feat.shape[-3:])
 
         # Extract features
-        train_feat = self.extract_classification_feat(backbone_feat, num_sequences)
+        train_feat = self.extract_classification_feat(
+            backbone_feat, num_sequences)
 
         # Get filters from each iteration
         final_filter, _, train_losses = self.get_filter(train_feat, bb)
@@ -120,11 +126,13 @@ class LinearFilter(nn.Module):
     def track_frame(self, filter_weights, backbone_feat):
         if backbone_feat.dim() == 5:
             num_sequences = backbone_feat.shape[1]
-            backbone_feat = backbone_feat.reshape(-1, *backbone_feat.shape[-3:])
+            backbone_feat = backbone_feat.reshape(-1,
+                                                  *backbone_feat.shape[-3:])
         else:
             num_sequences = None
 
-        test_feat = self.extract_classification_feat(backbone_feat, num_sequences)
+        test_feat = self.extract_classification_feat(
+            backbone_feat, num_sequences)
 
         scores = filter_layer.apply_filter(test_feat, filter_weights)
 
