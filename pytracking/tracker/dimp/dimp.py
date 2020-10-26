@@ -69,6 +69,7 @@ class DiMP(BaseTracker):
 
         # Set search area
         # 搜索区域大小: self.params.search_area_scale倍的目标区域
+        # self.target_sz: torch.Tensor tensor([高, 宽])
         search_area = torch.prod(
             self.target_sz * self.params.search_area_scale).item()
         self.init_search_area = search_area
@@ -91,7 +92,7 @@ class DiMP(BaseTracker):
         self.max_scale_factor = torch.min(self.image_sz / self.base_target_sz)
 
         # Extract and transform sample
-        # 数据增强初始图片，并输入Backbone Feature Extractor得到Initial Backbone Features
+        # 数据增强初始图片, 并输入Backbone Feature Extractor得到Initial Backbone Features
         init_backbone_feat = self.generate_init_samples(im)
 
         # Initialize classifier
@@ -166,9 +167,11 @@ class DiMP(BaseTracker):
 
         if update_flag and self.params.get('update_classifier', False):
             # Get train sample
+            # train_x.shape = torch.Size([1, 512, 18, 18])
             train_x = test_x[scale_ind:scale_ind+1, ...]
 
             # Create target_box and label for spatial sample
+            # target_box.shape = torch.Size([4]): x, y, width, height
             target_box = self.get_iounet_box(
                 self.pos, self.target_sz, sample_pos[scale_ind, :], sample_scales[scale_ind])
 
@@ -447,7 +450,7 @@ class DiMP(BaseTracker):
             'use_augmentation', True) else {}
 
         # Add all augmentations
-        if 'shift' in augs:  # 平移
+        if 'shift' in augs:  # 平移, 没有在dimp50.py中定义
             self.transforms.extend([augmentation.Translation(
                 shift, aug_output_sz, global_shift.long().tolist()) for shift in augs['shift']])
         if 'relativeshift' in augs:  # 相对平移
@@ -505,6 +508,10 @@ class DiMP(BaseTracker):
         self.previous_replace_ind = [None] * len(self.num_stored_samples)
         self.sample_weights = TensorList(
             [x.new_zeros(self.params.sample_memory_size) for x in train_x])
+
+        # [TEST] Print the sample weights
+        # print(self.sample_weights[0].cpu().numpy().tolist())
+
         for sw, init_sw, num in zip(self.sample_weights, init_sample_weights, self.num_init_samples):
             sw[:num] = init_sw
 
@@ -520,6 +527,9 @@ class DiMP(BaseTracker):
         replace_ind = self.update_sample_weights(
             self.sample_weights, self.previous_replace_ind, self.num_stored_samples, self.num_init_samples, learning_rate)
         self.previous_replace_ind = replace_ind
+
+        # [TEST] Print the sample weights
+        # print(self.sample_weights[0].cpu().numpy().tolist())
 
         # Update sample and label memory
         for train_samp, x, ind in zip(self.training_samples, sample_x, replace_ind):
