@@ -1,0 +1,1 @@
+CUDA_VISIBLE_DEVICES=1 python run_video.py Office/Office_001_960x540.mp4
