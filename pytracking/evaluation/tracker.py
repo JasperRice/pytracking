@@ -272,6 +272,7 @@ class Tracker:
         ", videofilepath must be a valid videofile"
 
         output_boxes = []
+        search_area_boxes = []
 
         cap = cv.VideoCapture(videofilepath)
         display_name = 'Display: ' + tracker.params.tracker_name
@@ -292,6 +293,7 @@ class Tracker:
             assert len(optional_box) == 4, "valid box's foramt is [x,y,w,h]"
             tracker.initialize(frame, _build_init_info(optional_box))
             output_boxes.append(optional_box)
+            search_area_boxes.append(optional_box)
         else:
             while True:
                 # cv.waitKey()
@@ -321,7 +323,15 @@ class Tracker:
             output_boxes.append(state)
 
             cv.rectangle(frame_disp, (state[0], state[1]), (state[2] + state[0], state[3] + state[1]),
-                         (0, 255, 0), 5)
+                         (0, 255, 0), 2)
+
+            # ----- Draw search area box
+            for obj_id in tracker.initialized_ids:
+                search_area_box = (
+                    tracker.trackers[obj_id].search_area_box).numpy().tolist()
+                cv.rectangle(frame_disp, (search_area_box[0], search_area_box[1]), (search_area_box[2] + search_area_box[0], search_area_box[3] + search_area_box[1]),
+                             (0, 0, 255), 2)
+                search_area_boxes.append(search_area_box)
 
             font_color = (0, 0, 0)
             cv.putText(frame_disp, 'Tracking!', (20, 30), cv.FONT_HERSHEY_COMPLEX_SMALL, 1,
@@ -349,6 +359,7 @@ class Tracker:
                 init_state = [x, y, w, h]
                 tracker.initialize(frame, _build_init_info(init_state))
                 output_boxes.append(init_state)
+                search_area_boxes.append(init_state)
 
         # When everything done, release the capture
         cap.release()
@@ -364,6 +375,12 @@ class Tracker:
             tracked_bb = np.array(output_boxes).astype(int)
             bbox_file = '{}.txt'.format(base_results_path)
             np.savetxt(bbox_file, tracked_bb, delimiter='\t', fmt='%d')
+
+            search_area_tracked_bb = np.array(search_area_boxes).astype(int)
+            search_area_bbox_file = '{}_Search_Area.txt'.format(
+                base_results_path)
+            np.savetxt(search_area_bbox_file, search_area_tracked_bb,
+                       delimiter='\t', fmt='%d')
 
     def run_webcam(self, debug=None, visdom_info=None):
         """Run the tracker with the webcam.
