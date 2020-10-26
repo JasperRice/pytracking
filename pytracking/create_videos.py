@@ -124,6 +124,46 @@ def overlap_bbox_on_video(bbox_path, video_path, out_path=None, search_area_path
     cv.destroyAllWindows()
 
 
+def merge_videos(in_paths, out_path, fps=30.0, mode='horizontal'):
+    import numpy as np
+
+    videos = []
+    for path in in_paths:
+        video = cv.VideoCapture(path)
+        videos.append(video)
+
+    num = len(videos)
+
+    out_video = None
+    fourcc = cv.VideoWriter_fourcc(*'MJPG')
+
+    ret = True
+    while ret:
+        frames = []
+        for video in videos:
+            ret, frame = video.read()
+            if not ret:
+                break
+            frames.append(frame)
+            if out_video == None:
+                height, width, _ = frame.shape
+                if mode == 'horizontal':
+                    width *= num
+                else:
+                    height *= num
+                frameSize = (width, height)
+                out_video = cv.VideoWriter(
+                    out_path, fourcc=fourcc, fps=fps, frameSize=frameSize)
+        if ret:
+            frames = np.hstack(
+                frames) if mode == 'horizontal' else np.vstack(frames)
+            out_video.write(frames)
+
+    for video in videos:
+        video.release()
+    cv.destroyAllWindows()
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Run converter from images to videos.')
@@ -131,7 +171,7 @@ def main():
                         default='dimp', help='Name of tracking method.')
     parser.add_argument('--tracker_param', type=str,
                         default='dimp50', help='Name of parameter file.')
-    parser.add_argument('--create_method', type=str, default='bbox2video',
+    parser.add_argument('--create_method', type=str, default='merge',
                         help='Name of the video generation method.')
 
     args = parser.parse_args()
@@ -168,6 +208,16 @@ def main():
         search_area_scale = input("What is the search area scale: ")
         overlap_bbox_on_video(bbox_path, video_path, search_area_path=search_area_path,
                               flag='+Sample_Memory_size={}+Search_Area_Scale={}'.format(sample_memory_size, search_area_scale))
+    elif args.create_method == 'merge':
+        print("Merging videos.")
+        in_paths = []
+        in_paths.append(
+            "/home/sifan/Documents/pytracking/pytracking/datasets/Videos/Office/[P]Office_001_960x540+Search_Area+BBox+Sample_Memory_size=30+Search_Area_Scale=5.avi")
+        in_paths.append(
+            "/home/sifan/Documents/pytracking/pytracking/datasets/Videos/Office/[F]Office_001_960x540+Search_Area+BBox+Sample_Memory_size=30.avi")
+
+        out_path = "/home/sifan/Videos/[PF]Office_001_960x540+Results+Vertical.avi"
+        merge_videos(in_paths, out_path, mode='vertical')
 
 
 if __name__ == '__main__':
