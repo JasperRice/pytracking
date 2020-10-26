@@ -1,9 +1,10 @@
-import numpy as np
 import math
+import random
+
+import numpy as np
 import torch
 import torch.nn.functional as F
-import cv2 as cv
-import random
+from cv2 import cv2 as cv
 from pytracking.features.preprocessing import numpy_to_torch, torch_to_numpy
 
 
