@@ -204,10 +204,11 @@ def main():
         bbox_path = '/home/sifan/Documents/pytracking/pytracking/tracking_results/dimp/dimp50/video_Office_001_960x540.txt'
         video_path = '/home/sifan/Documents/pytracking/pytracking/datasets/Videos/Office/Office_001_960x540.mp4'
         search_area_path = '/home/sifan/Documents/pytracking/pytracking/tracking_results/dimp/dimp50/video_Office_001_960x540_Search_Area.txt'
-        sample_memory_size = input("What is the sample memory size: ")
         search_area_scale = input("What is the search area scale: ")
+        sample_memory_size = input("What is the sample memory size: ")
+        flag = input("Extra information: ")
         overlap_bbox_on_video(bbox_path, video_path, search_area_path=search_area_path,
-                              flag='+Sample_Memory_size={}+Search_Area_Scale={}'.format(sample_memory_size, search_area_scale))
+                              flag='+Sample_Memory_size={}+Search_Area_Scale={}'.format(sample_memory_size, search_area_scale) + flag if flag == '' else ('+'+flag))
     elif args.create_method == 'merge':
         print("Merging videos.")
         in_paths = []
