@@ -10,7 +10,7 @@ def draw_figure(fig):
     plt.pause(0.001)
 
 
-def show_tensor(a: torch.Tensor, fig_num = None, title = None, range=(None, None), ax=None):
+def show_tensor(a: torch.Tensor, fig_num=None, title=None, range=(None, None), ax=None):
     """Display a 2D tensor.
     args:
         fig_num: Figure number.
@@ -40,7 +40,7 @@ def show_tensor(a: torch.Tensor, fig_num = None, title = None, range=(None, None
         draw_figure(plt.gcf())
 
 
-def plot_graph(a: torch.Tensor, fig_num = None, title = None):
+def plot_graph(a: torch.Tensor, fig_num=None, title=None):
     """Plot graph. Data is a 1D tensor.
     args:
         fig_num: Figure number.
@@ -68,7 +68,8 @@ def show_image_with_boxes(im, boxes, iou_pred=None, disp_ids=None):
     for i_ in range(boxes.shape[0]):
         if disp_ids is None or disp_ids[i_]:
             bb = boxes[i_, :]
-            disp_color = (i_*38 % 256, (255 - i_*97) % 256, (123 + i_*66) % 256)
+            disp_color = (i_*38 % 256, (255 - i_*97) %
+                          256, (123 + i_*66) % 256)
             cv2.rectangle(im_np, (bb[0], bb[1]), (bb[0] + bb[2], bb[1] + bb[3]),
                           disp_color, 1)
 
@@ -80,7 +81,6 @@ def show_image_with_boxes(im, boxes, iou_pred=None, disp_ids=None):
     im_tensor = torch.from_numpy(im_np.transpose(2, 0, 1)).float()
 
     return im_tensor
-
 
 
 def _pascal_color_map(N=256, normalized=False):

@@ -70,12 +70,10 @@ class DiMP(BaseTracker):
         # Set search area
         # 搜索区域大小: self.params.search_area_scale倍的目标区域
         # self.target_sz: torch.Tensor tensor([高, 宽])
-        search_area = torch.prod(
-            self.target_sz * self.params.search_area_scale).item()
+        search_area = torch.prod(self.target_sz * self.params.search_area_scale).item()
         self.init_search_area = search_area
 
-        self.target_scale = math.sqrt(
-            search_area) / self.img_sample_sz.prod().sqrt()
+        self.target_scale = math.sqrt(search_area) / self.img_sample_sz.prod().sqrt()
 
         # Target size in base scale
         self.base_target_sz = self.target_sz / self.target_scale
@@ -99,6 +97,7 @@ class DiMP(BaseTracker):
         self.init_classifier(init_backbone_feat)
 
         # Initialize IoUNet
+        # self.params['use_iou_net'] = True, since it is not defined in dimp50.py
         if self.params.get('use_iou_net', True):
             self.init_iou_net(init_backbone_feat)
 
@@ -147,6 +146,10 @@ class DiMP(BaseTracker):
         # Step 6: Update position and scale
         # Dependency: Step 1 & 3 & 5
         # Usage: self.update_state & self.refine_target_box
+        
+        # [TEST] Print Flag
+        # print(flag)
+
         if flag != 'not_found':
             if self.params.get('use_iou_net', True):
                 update_scale_flag = self.params.get(
@@ -157,11 +160,15 @@ class DiMP(BaseTracker):
                     backbone_feat, sample_pos[scale_ind, :], sample_scales[scale_ind], scale_ind, update_scale_flag)
             elif self.params.get('use_classifier', True):
                 self.update_state(new_pos, sample_scales[scale_ind])
+        else:
+            pass
 
         # ------- UPDATE ------- #
 
         update_flag = flag not in ['not_found', 'uncertain']
         hard_negative = (flag == 'hard_negative')
+        
+        # DiMP-50: self.params['hard_negative_learning_rate'] = 0.02
         learning_rate = self.params.get(
             'hard_negative_learning_rate', None) if hard_negative else None
 
@@ -187,8 +194,8 @@ class DiMP(BaseTracker):
         max_score = torch.max(score_map).item()
 
         # Visualize and set debug info
-        self.search_area_box = torch.cat((sample_coords[scale_ind, [
-                                         1, 0]], sample_coords[scale_ind, [3, 2]] - sample_coords[scale_ind, [1, 0]] - 1))
+        self.search_area_box = torch.cat((sample_coords[scale_ind, [1, 0]],
+                                          sample_coords[scale_ind, [3, 2]] - sample_coords[scale_ind, [1, 0]] - 1))
         self.debug_info['flag' + self.id_str] = flag
         self.debug_info['max_score' + self.id_str] = max_score
         if self.visdom is not None:
@@ -273,6 +280,7 @@ class DiMP(BaseTracker):
             scores = F.conv2d(
                 scores.view(-1, 1, *scores.shape[-2:]), kernel, padding=score_filter_ksz//2).view(scores.shape)
 
+        # self.params['advanced_localization'] = True, as defined in dimp50.py
         if self.params.get('advanced_localization', False):
             return self.localize_advanced(scores, sample_pos, sample_scales)
 
@@ -372,8 +380,7 @@ class DiMP(BaseTracker):
 
     def extract_backbone_features(self, im: torch.Tensor, pos: torch.Tensor, scales, sz: torch.Tensor):
         im_patches, patch_coords = sample_patch_multiscale(im, pos, scales, sz,
-                                                           mode=self.params.get(
-                                                               'border_mode', 'replicate'),
+                                                           mode=self.params.get('border_mode', 'replicate'),
                                                            max_scale_change=self.params.get('patch_max_scale_change', None))
         with torch.no_grad():
             backbone_feat = self.net.extract_backbone(im_patches)
@@ -509,9 +516,6 @@ class DiMP(BaseTracker):
         self.sample_weights = TensorList(
             [x.new_zeros(self.params.sample_memory_size) for x in train_x])
 
-        # [TEST] Print the sample weights
-        # print(self.sample_weights[0].cpu().numpy().tolist())
-
         for sw, init_sw, num in zip(self.sample_weights, init_sample_weights, self.num_init_samples):
             sw[:num] = init_sw
 
@@ -546,6 +550,8 @@ class DiMP(BaseTracker):
         # Update weights and get index to replace
         replace_ind = []
         for sw, prev_ind, num_samp, num_init in zip(sample_weights, previous_replace_ind, num_stored_samples, num_init_samples):
+            # [TEST] Change lr to 0.0 when the last buffer is larger than 0.01
+            # lr = 0.0 if sw[-1] > 0.01 else learning_rate # Default: learning_rate
             lr = learning_rate
             if lr is None:
                 lr = self.params.learning_rate

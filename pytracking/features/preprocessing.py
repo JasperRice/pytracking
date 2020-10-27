@@ -1,6 +1,6 @@
+import numpy as np
 import torch
 import torch.nn.functional as F
-import numpy as np
 
 
 def numpy_to_torch(a: np.ndarray):
@@ -8,7 +8,7 @@ def numpy_to_torch(a: np.ndarray):
 
 
 def torch_to_numpy(a: torch.Tensor):
-    return a.squeeze(0).permute(1,2,0).numpy()
+    return a.squeeze(0).permute(1, 2, 0).numpy()
 
 
 def sample_patch_transformed(im, pos, scale, image_sz, transforms, is_mask=False):
@@ -22,7 +22,8 @@ def sample_patch_transformed(im, pos, scale, image_sz, transforms, is_mask=False
     """
 
     # Get image patche
-    im_patch, _ = sample_patch(im, pos, scale*image_sz, image_sz, is_mask=is_mask)
+    im_patch, _ = sample_patch(
+        im, pos, scale*image_sz, image_sz, is_mask=is_mask)
 
     # Apply transforms
     im_patches = torch.cat([T(im_patch, is_mask=is_mask) for T in transforms])
@@ -30,7 +31,7 @@ def sample_patch_transformed(im, pos, scale, image_sz, transforms, is_mask=False
     return im_patches
 
 
-def sample_patch_multiscale(im, pos, scales, image_sz, mode: str='replicate', max_scale_change=None):
+def sample_patch_multiscale(im, pos, scales, image_sz, mode: str = 'replicate', max_scale_change=None):
     """Extract image patches at multiple scales.
     args:
         im: Image.
@@ -49,7 +50,7 @@ def sample_patch_multiscale(im, pos, scales, image_sz, mode: str='replicate', ma
     im_patches = torch.cat(list(patch_iter))
     patch_coords = torch.cat(list(coord_iter))
 
-    return  im_patches, patch_coords
+    return im_patches, patch_coords
 
 
 def sample_patch(im: torch.Tensor, pos: torch.Tensor, sample_sz: torch.Tensor, output_sz: torch.Tensor = None,
@@ -126,20 +127,24 @@ def sample_patch(im: torch.Tensor, pos: torch.Tensor, sample_sz: torch.Tensor, o
 
     # Get image patch
     if not is_mask:
-        im_patch = F.pad(im2, (-tl[1].item(), br[1].item() - im2.shape[3], -tl[0].item(), br[0].item() - im2.shape[2]), pad_mode)
+        im_patch = F.pad(im2, (-tl[1].item(), br[1].item() - im2.shape[3], -
+                               tl[0].item(), br[0].item() - im2.shape[2]), pad_mode)
     else:
-        im_patch = F.pad(im2, (-tl[1].item(), br[1].item() - im2.shape[3], -tl[0].item(), br[0].item() - im2.shape[2]))
+        im_patch = F.pad(im2, (-tl[1].item(), br[1].item() -
+                               im2.shape[3], -tl[0].item(), br[0].item() - im2.shape[2]))
 
     # Get image coordinates
-    patch_coord = df * torch.cat((tl, br)).view(1,4)
+    patch_coord = df * torch.cat((tl, br)).view(1, 4)
 
     if output_sz is None or (im_patch.shape[-2] == output_sz[0] and im_patch.shape[-1] == output_sz[1]):
         return im_patch.clone(), patch_coord
 
     # Resample
     if not is_mask:
-        im_patch = F.interpolate(im_patch, output_sz.long().tolist(), mode='bilinear')
+        im_patch = F.interpolate(
+            im_patch, output_sz.long().tolist(), mode='bilinear')
     else:
-        im_patch = F.interpolate(im_patch, output_sz.long().tolist(), mode='nearest')
+        im_patch = F.interpolate(
+            im_patch, output_sz.long().tolist(), mode='nearest')
 
     return im_patch, patch_coord

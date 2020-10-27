@@ -6,16 +6,15 @@ def parameters():
     params = TrackerParams()
 
     params.debug = 0
-    params.visualization = False # Default: False
+    params.visualization = False  # Default: False
 
     params.use_gpu = True
 
     params.image_sample_size = 18*16
-    params.search_area_scale = 5 # Default
+    params.search_area_scale = 5  # Default: 5
 
     # Learning parameters
-    params.sample_memory_size = 50
-    # params.sample_memory_size = 50 # Default
+    params.sample_memory_size = 30  # Default: 50
     params.learning_rate = 0.01
     params.init_samples_minimum_weight = 0.25
     params.train_skipping = 20
@@ -42,7 +41,7 @@ def parameters():
 
     # Advanced localization parameters
     params.advanced_localization = True
-    params.target_not_found_threshold = 0.25
+    params.target_not_found_threshold = 0.25 # Default: 0.25
     params.distractor_threshold = 0.8
     params.hard_negative_threshold = 0.5
     params.target_neighborhood_scale = 2.2
