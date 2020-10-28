@@ -24,11 +24,11 @@ def run_video(tracker_name, tracker_param, videofile, optional_box=None, debug=N
 def main():
     parser = argparse.ArgumentParser(
         description='Run the tracker on your webcam.')
-    parser.add_argument('videofile', type=str, help='path to a video file.')
-    parser.add_argument('--tracker_name', type=str,
+    parser.add_argument('tracker_name', type=str,
                         default='dimp', help='Name of tracking method.')
-    parser.add_argument('--tracker_param', type=str,
+    parser.add_argument('tracker_param', type=str,
                         default='dimp50', help='Name of parameter file.')
+    parser.add_argument('videofile', type=str, help='path to a video file.')
     parser.add_argument('--optional_box', type=float, default=None,
                         nargs="+", help='optional_box with format x y w h.')
     parser.add_argument('--debug', type=int, default=0, help='Debug level.')

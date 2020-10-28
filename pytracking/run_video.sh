@@ -1,1 +1,1 @@
-CUDA_VISIBLE_DEVICES=4 python run_video.py Office/Office_001_960x540.mp4
+CUDA_VISIBLE_DEVICES=4 python run_video.py dimp dimp50 Office/Office_001_960x540.mp4

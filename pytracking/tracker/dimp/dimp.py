@@ -57,9 +57,11 @@ class DiMP(BaseTracker):
             self.object_id)
 
         # Set sizes
+        # self.params.image_sample_size = 18*16, as defined in dimp50.py, should be taken care of
         self.image_sz = torch.Tensor([im.shape[2], im.shape[3]])
         sz = self.params.image_sample_size
         sz = torch.Tensor([sz, sz] if isinstance(sz, int) else sz)
+        # self.params['use_image_aspect_ratio] = False, since not defined in dimp50.py
         if self.params.get('use_image_aspect_ratio', False):
             sz = self.image_sz * sz.prod().sqrt() / self.image_sz.prod().sqrt()
             stride = self.params.get('feature_stride', 32)
@@ -73,6 +75,8 @@ class DiMP(BaseTracker):
         search_area = torch.prod(self.target_sz * self.params.search_area_scale).item()
         self.init_search_area = search_area
 
+        # self.target_scale 是search area和
+        # input.prod(): 返回所有元素的乘积
         self.target_scale = math.sqrt(search_area) / self.img_sample_sz.prod().sqrt()
 
         # Target size in base scale
@@ -117,6 +121,8 @@ class DiMP(BaseTracker):
 
         # Step 1: Extract backbone features
         # Usage: self.extract_backbone_features
+        # self.extract_backbone_features(im: torch.Tensor, pos: torch.Tensor, scales, sz: torch.Tensor)
+        # self.img_sample_sz is the size of the image stored in the pattern
         backbone_feat, sample_coords, im_patches = self.extract_backbone_features(im, self.get_centered_sample_pos(),
                                                                                   self.target_scale * self.params.scale_factors,
                                                                                   self.img_sample_sz)
@@ -551,8 +557,8 @@ class DiMP(BaseTracker):
         replace_ind = []
         for sw, prev_ind, num_samp, num_init in zip(sample_weights, previous_replace_ind, num_stored_samples, num_init_samples):
             # [TEST] Change lr to 0.0 when the last buffer is larger than 0.01
-            # lr = 0.0 if sw[-1] > 0.01 else learning_rate # Default: learning_rate
-            lr = learning_rate
+            lr = 0.0 if sw[-1] > 0.008 else learning_rate # Default: learning_rate
+            # lr = learning_rate
             if lr is None:
                 lr = self.params.learning_rate
 

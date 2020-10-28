@@ -57,14 +57,26 @@ def sample_patch(im: torch.Tensor, pos: torch.Tensor, sample_sz: torch.Tensor, o
                  mode: str = 'replicate', max_scale_change=None, is_mask=False):
     """Sample an image patch.
 
-    args:
-        im: Image
-        pos: center position of crop
-        sample_sz: size to crop
-        output_sz: size to resize to
-        mode: how to treat image borders: 'replicate' (default), 'inside' or 'inside_major'
-        max_scale_change: maximum allowed scale change when using 'inside' and 'inside_major' mode
+    :param im: Image
+    :type im: torch.Tensor
+    :param pos: center position of crop
+    :type pos: torch.Tensor
+    :param sample_sz: size to crop
+    :type sample_sz: torch.Tensor
+    :param output_sz: size to resize to, defaults to None
+    :type output_sz: torch.Tensor, optional
+    :param mode: how to treat image borders: 'replicate' (default), 'inside' or 'inside_major', defaults to 'replicate'
+    :type mode: str, optional
+    :param max_scale_change: maximum allowed scale change when using 'inside' and 'inside_major' mode, defaults to None
+    :type max_scale_change: [type], optional
+    :param is_mask: [description], defaults to False
+    :type is_mask: bool, optional
+    :raises ValueError: [description]
+    :return: Sampled image patch, 
+    :rtype: [type]
     """
+    # [TEST] Pint Sample Size
+    # print(sample_sz)
 
     # if mode not in ['replicate', 'inside']:
     #     raise ValueError('Unknown border mode \'{}\'.'.format(mode))
@@ -146,5 +158,14 @@ def sample_patch(im: torch.Tensor, pos: torch.Tensor, sample_sz: torch.Tensor, o
     else:
         im_patch = F.interpolate(
             im_patch, output_sz.long().tolist(), mode='nearest')
+
+    # [TEST] Print Image Patch size
+    # TEMP = im_patch.cpu().numpy()
+    # h, w = TEMP[0, 0].shape
+    # print(h*w)
+
+    # import pdb
+    # pdb.set_trace()
+
 
     return im_patch, patch_coord
