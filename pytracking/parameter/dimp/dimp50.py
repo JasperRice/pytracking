@@ -10,11 +10,11 @@ def parameters():
 
     params.use_gpu = True
 
-    params.image_sample_size = 18*16
-    params.search_area_scale = 5  # Default: 5
+    params.image_sample_size = 18*16 # Default: 18*16
+    params.search_area_scale = 3.5  # Default: 5
 
     # Learning parameters
-    params.sample_memory_size = 30  # Default: 50
+    params.sample_memory_size = 250  # Default: 50
     params.learning_rate = 0.01
     params.init_samples_minimum_weight = 0.25
     params.train_skipping = 20
@@ -48,6 +48,9 @@ def parameters():
     params.dispalcement_scale = 0.8
     params.hard_negative_learning_rate = 0.02
     params.update_scale_when_uncertain = True
+
+    # [TEST] Parameter deciding whether updating sample weights or not
+    params.stop_update_sample_weight = True
 
     # IoUnet parameters
     params.iounet_augmentation = False

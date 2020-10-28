@@ -95,7 +95,7 @@ class DiMP(BaseTracker):
             self.params.scale_factors = torch.Tensor(self.params.scale_factors)
 
         # [TEST] Enlarge search area when the target is not found for several frames
-        self.original_scale_factors = self.params.scale_factors
+        self.original_scale_factors = self.params.scale_factors.clone()
 
         # Setup scale bounds
         # self.min_scale_factor and self.max_scale_factor are used in the method update_state
@@ -130,10 +130,10 @@ class DiMP(BaseTracker):
 
         # Step 1: Extract backbone features
         # Usage: self.extract_backbone_features
-        # self.extract_backbone_features(im: torch.Tensor, pos: torch.Tensor, scales, sz: torch.Tensor)
         # self.img_sample_sz is the size of the image stored in the pattern
-        # def extract_backbone_features(im, pos, scales, sz)
-        # def sample_patch_transformed(im, pos, scale, image_sz, transforms, is_mask=False)
+        # def extract_backbone_features(im: torch.Tensor, pos: torch.Tensor, scales, sz: torch.Tensor)
+        # |---def sample_patch_multiscale(im, pos, scales, image_sz, mode: str = 'replicate', max_scale_change=None)
+        # |---|---def sample_patch_transformed(im, pos, scale, image_sz, transforms, is_mask=False)
         backbone_feat, sample_coords, im_patches = self.extract_backbone_features(im, self.get_centered_sample_pos(),
                                                                                   self.target_scale * self.params.scale_factors,
                                                                                   self.img_sample_sz)
@@ -165,8 +165,8 @@ class DiMP(BaseTracker):
         # Usage: self.update_state & self.refine_target_box
 
         # [TEST] Print the flag if is not normal
-        if flag != 'normal':
-            print('Flag: {}'.format(flag))
+        # if flag != 'normal':
+        #     print('Flag: {}'.format(flag))
 
         if flag != 'not_found':
             if self.params.get('use_iou_net', True):
@@ -180,14 +180,17 @@ class DiMP(BaseTracker):
                 self.update_state(new_pos, sample_scales[scale_ind])
 
             self.continuous_not_found_count = 0
-            self.params.scale_factors = self.original_scale_factors
+            self.params.scale_factors = self.original_scale_factors.clone()
         else:
             self.continuous_not_found_count += int(flag == self.old_flag)
+            if self.continuous_not_found_count < 40:
+                self.params.scale_factors *= self.params.get('scale_factors_enlarge_rate', 1.03)
 
+        print(self.original_scale_factors)
         # [TEST] Enlarge search area when the target is not found for several frames
-        if self.continuous_not_found_count > self.params.get('lost_target_frame_threshold', 20):
-            print("Searching a larger area ...")
-            self.params.scale_factors = 2 * torch.ones(1)
+        # if self.continuous_not_found_count > self.params.get('lost_target_frame_threshold', 20):
+        #     print("Searching a larger area ...")
+        #     self.params.scale_factors = 2 * torch.ones(1)
         self.old_flag = flag
 
         # ------- UPDATE ------- #
@@ -243,6 +246,10 @@ class DiMP(BaseTracker):
             output_state = new_state.tolist()
 
         out = {'target_bbox': output_state}
+
+        # [TEST] Add flag infomation into the output 
+        out['flag'] = self.old_flag
+
         return out
 
     def get_sample_location(self, sample_coord):
@@ -578,8 +585,12 @@ class DiMP(BaseTracker):
         replace_ind = []
         for sw, prev_ind, num_samp, num_init in zip(sample_weights, previous_replace_ind, num_stored_samples, num_init_samples):
             # [TEST] Change lr to 0.0 when the last buffer is larger than 0.01
-            lr = 0.0 if sw[-1] > 0.008 else learning_rate # Default: learning_rate
-            # lr = learning_rate
+            if self.params.get('stop_update_sample_weight', True):
+                lr = 0.0 if sw[-1] > (0.5 / self.params.sample_memory_size) else learning_rate # Default: learning_rate
+            else:
+                lr = learning_rate
+
+            # This condition will not be executed after using the [TEST] defined above
             if lr is None:
                 lr = self.params.learning_rate
 

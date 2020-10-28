@@ -20,6 +20,15 @@ _tracker_disp_colors = {1: (0, 255, 0), 2: (0, 0, 255), 3: (255, 0, 0),
                         4: (255, 255, 255), 5: (0, 0, 0), 6: (0, 255, 128),
                         7: (123, 123, 123), 8: (255, 128, 0), 9: (128, 0, 255)}
 
+# [TEST] Colors of different state
+_bbox_colors = {
+    'normal': (0, 255, 0),
+    'uncertain': (0, 255, 255),
+    'hard_negative': (255, 0, 0),
+    'not_found': (0, 0, 255),
+    'search': (127, 127, 127)
+}
+
 
 def trackerlist(name: str, parameter_name: str, run_ids=None, display_name: str = None):
     """Generate list of trackers.
@@ -272,6 +281,7 @@ class Tracker:
         ", videofilepath must be a valid videofile"
 
         output_boxes = []
+        flags = []
         search_area_boxes = []
 
         cap = cv.VideoCapture(videofilepath)
@@ -293,6 +303,7 @@ class Tracker:
             assert len(optional_box) == 4, "valid box's foramt is [x,y,w,h]"
             tracker.initialize(frame, _build_init_info(optional_box))
             output_boxes.append(optional_box)
+            flags.append('normal')
             search_area_boxes.append(optional_box)
         else:
             while True:
@@ -307,6 +318,8 @@ class Tracker:
                 init_state = [x, y, w, h]
                 tracker.initialize(frame, _build_init_info(init_state))
                 output_boxes.append(init_state)
+                flags.append('normal')
+                search_area_boxes.append(init_state)
                 break
 
         while True:
@@ -320,17 +333,19 @@ class Tracker:
             # Draw box
             out = tracker.track(frame)
             state = [int(s) for s in out['target_bbox'][1]]
+            flag = out['flag'][1]
             output_boxes.append(state)
+            flags.append(flag)
 
             cv.rectangle(frame_disp, (state[0], state[1]), (state[2] + state[0], state[3] + state[1]),
-                         (0, 255, 0), 2)
+                         _bbox_colors[flag], 2)
 
             # ----- Draw search area box
             for obj_id in tracker.initialized_ids:
                 search_area_box = (
                     tracker.trackers[obj_id].search_area_box).numpy().tolist()
                 cv.rectangle(frame_disp, (search_area_box[0], search_area_box[1]), (search_area_box[2] + search_area_box[0], search_area_box[3] + search_area_box[1]),
-                             (0, 0, 255), 2)
+                             _bbox_colors['search'], 2)
                 search_area_boxes.append(search_area_box)
 
             font_color = (0, 0, 0)
@@ -359,6 +374,7 @@ class Tracker:
                 init_state = [x, y, w, h]
                 tracker.initialize(frame, _build_init_info(init_state))
                 output_boxes.append(init_state)
+                flags.append('normal')
                 search_area_boxes.append(init_state)
 
         # When everything done, release the capture
@@ -376,9 +392,13 @@ class Tracker:
             bbox_file = '{}.txt'.format(base_results_path)
             np.savetxt(bbox_file, tracked_bb, delimiter='\t', fmt='%d')
 
+            tracked_bb_flag = np.array(flags)
+            bbox_flag_file = '{}_Flag.txt'.format(base_results_path)
+            np.savetxt(bbox_flag_file, tracked_bb_flag, delimiter='\t', fmt='%s')
+
+
             search_area_tracked_bb = np.array(search_area_boxes).astype(int)
-            search_area_bbox_file = '{}_Search_Area.txt'.format(
-                base_results_path)
+            search_area_bbox_file = '{}_Search_Area.txt'.format(base_results_path)
             np.savetxt(search_area_bbox_file, search_area_tracked_bb,
                        delimiter='\t', fmt='%d')
 

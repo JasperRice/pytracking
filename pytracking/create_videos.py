@@ -9,6 +9,15 @@ if env_path not in sys.path:
     sys.path.append(env_path)
 
 
+_bbox_colors = {
+    'normal': (0, 255, 0),
+    'uncertain': (0, 255, 255),
+    'hard_negative': (255, 0, 0),
+    'not_found': (0, 0, 255),
+    'search': (127, 127, 127)
+}
+
+
 def get_image_list(image_path, image_type):
     """Get all the path of the images in a certain folder
 
@@ -61,7 +70,7 @@ def convert_images_to_video(image_path, video_path, fps=30.0, frameSize=None, im
     cv.destroyAllWindows()
 
 
-def overlap_bbox_on_video(bbox_path, video_path, out_path=None, search_area_path=None, gt_path=None, fps=30.0, flag=''):
+def overlap_bbox_on_video(bbox_path, bbox_flag_path, video_path, out_path=None, search_area_path=None, gt_path=None, fps=30.0, flag=''):
     """[summary]
 
     :param bbox_path: [description]
@@ -81,6 +90,9 @@ def overlap_bbox_on_video(bbox_path, video_path, out_path=None, search_area_path
 
     bbox_file = open(bbox_path)
     bbox_lines = bbox_file.readlines()
+
+    bbox_flag_file = open(bbox_flag_path)
+    bbox_flag_lines = bbox_flag_file.readlines()
 
     if search_area_path != None:
         search_area_file = open(search_area_path)
@@ -107,13 +119,13 @@ def overlap_bbox_on_video(bbox_path, video_path, out_path=None, search_area_path
                 l, b, w, h = tuple(map(int, search_area_line.split()))
                 left_corner, right_corner = (l, b), (l+w, b+h)
                 cv.rectangle(frame_copy, left_corner, right_corner,
-                             color=(0, 0, 255), thickness=2)
+                             color=_bbox_colors['search'], thickness=2)
 
         l, b, w, h = tuple(map(int, line.split()))
         left_corner, right_corner = (l, b), (l+w, b+h)
 
         cv.rectangle(frame_copy, left_corner, right_corner,
-                     color=(0, 255, 0), thickness=2)
+                     color=_bbox_colors[bbox_flag_lines[i][:-1]], thickness=2)
         output.write(frame_copy)
 
     bbox_file.close()
@@ -202,12 +214,13 @@ def main():
     elif args.create_method == 'bbox2video':
         print("Creating video from bounding boxes.")
         bbox_path = '/home/sifan/Documents/pytracking/pytracking/tracking_results/dimp/dimp50/video_Office_001_960x540.txt'
+        bbox_flag_path = '/home/sifan/Documents/pytracking/pytracking/tracking_results/dimp/dimp50/video_Office_001_960x540_Flag.txt'
         video_path = '/home/sifan/Documents/pytracking/pytracking/datasets/Videos/Office/Office_001_960x540.mp4'
         search_area_path = '/home/sifan/Documents/pytracking/pytracking/tracking_results/dimp/dimp50/video_Office_001_960x540_Search_Area.txt'
         search_area_scale = input("What is the search area scale: ")
         sample_memory_size = input("What is the sample memory size: ")
         flag = input("Extra information: ")
-        overlap_bbox_on_video(bbox_path, video_path, search_area_path=search_area_path,
+        overlap_bbox_on_video(bbox_path, bbox_flag_path, video_path, search_area_path=search_area_path,
                               flag='+Sample_Memory_size={}+Search_Area_Scale={}'.format(sample_memory_size, search_area_scale) + flag if flag == '' else ('+'+flag))
     elif args.create_method == 'merge':
         print("Merging videos.")
