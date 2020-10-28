@@ -27,6 +27,10 @@ class DiMP(BaseTracker):
         self.features_initialized = True
 
     def initialize(self, image, info: dict) -> dict:
+        # [TEST] Enlarge search area when the target is not found for several frames
+        self.continuous_not_found_count = 0 # :type int
+        self.old_flag = 'normal' # :type str
+
         # Initialize some stuff
         self.frame_num = 1
         if not self.params.has('device'):
@@ -83,10 +87,15 @@ class DiMP(BaseTracker):
         self.base_target_sz = self.target_sz / self.target_scale
 
         # Setup scale factors
+        # Used for getting the image patch (search area image)
+        # self.params.scale_factors = tensor([1.]), since self.params['scale_factors'] is not defined in dimp50.py
         if not self.params.has('scale_factors'):
             self.params.scale_factors = torch.ones(1)
         elif isinstance(self.params.scale_factors, (list, tuple)):
             self.params.scale_factors = torch.Tensor(self.params.scale_factors)
+
+        # [TEST] Enlarge search area when the target is not found for several frames
+        self.original_scale_factors = self.params.scale_factors
 
         # Setup scale bounds
         # self.min_scale_factor and self.max_scale_factor are used in the method update_state
@@ -123,6 +132,8 @@ class DiMP(BaseTracker):
         # Usage: self.extract_backbone_features
         # self.extract_backbone_features(im: torch.Tensor, pos: torch.Tensor, scales, sz: torch.Tensor)
         # self.img_sample_sz is the size of the image stored in the pattern
+        # def extract_backbone_features(im, pos, scales, sz)
+        # def sample_patch_transformed(im, pos, scale, image_sz, transforms, is_mask=False)
         backbone_feat, sample_coords, im_patches = self.extract_backbone_features(im, self.get_centered_sample_pos(),
                                                                                   self.target_scale * self.params.scale_factors,
                                                                                   self.img_sample_sz)
@@ -152,9 +163,10 @@ class DiMP(BaseTracker):
         # Step 6: Update position and scale
         # Dependency: Step 1 & 3 & 5
         # Usage: self.update_state & self.refine_target_box
-        
-        # [TEST] Print Flag
-        # print(flag)
+
+        # [TEST] Print the flag if is not normal
+        if flag != 'normal':
+            print('Flag: {}'.format(flag))
 
         if flag != 'not_found':
             if self.params.get('use_iou_net', True):
@@ -166,15 +178,24 @@ class DiMP(BaseTracker):
                     backbone_feat, sample_pos[scale_ind, :], sample_scales[scale_ind], scale_ind, update_scale_flag)
             elif self.params.get('use_classifier', True):
                 self.update_state(new_pos, sample_scales[scale_ind])
+
+            self.continuous_not_found_count = 0
+            self.params.scale_factors = self.original_scale_factors
         else:
-            pass
+            self.continuous_not_found_count += int(flag == self.old_flag)
+
+        # [TEST] Enlarge search area when the target is not found for several frames
+        if self.continuous_not_found_count > self.params.get('lost_target_frame_threshold', 20):
+            print("Searching a larger area ...")
+            self.params.scale_factors = 2 * torch.ones(1)
+        self.old_flag = flag
 
         # ------- UPDATE ------- #
 
         update_flag = flag not in ['not_found', 'uncertain']
         hard_negative = (flag == 'hard_negative')
         
-        # DiMP-50: self.params['hard_negative_learning_rate'] = 0.02
+        # self.params['hard_negative_learning_rate'] = 0.02, as defined in dimp50.py
         learning_rate = self.params.get(
             'hard_negative_learning_rate', None) if hard_negative else None
 
