@@ -186,7 +186,6 @@ class DiMP(BaseTracker):
             if self.continuous_not_found_count < 40:
                 self.params.scale_factors *= self.params.get('scale_factors_enlarge_rate', 1.03)
 
-        print(self.original_scale_factors)
         # [TEST] Enlarge search area when the target is not found for several frames
         # if self.continuous_not_found_count > self.params.get('lost_target_frame_threshold', 20):
         #     print("Searching a larger area ...")

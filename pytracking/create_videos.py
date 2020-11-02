@@ -1,7 +1,9 @@
 import argparse
 import os
+import pdb
 import sys
 
+import numpy as np
 from cv2 import cv2 as cv
 
 env_path = os.path.join(os.path.dirname(__file__), '..')
@@ -70,21 +72,41 @@ def convert_images_to_video(image_path, video_path, fps=30.0, frameSize=None, im
     cv.destroyAllWindows()
 
 
-def overlap_bbox_on_video(bbox_path, bbox_flag_path, video_path, out_path=None, search_area_path=None, gt_path=None, fps=30.0, flag=''):
-    """[summary]
-
-    :param bbox_path: [description]
-    :type bbox_path: [type]
-    :param video_path: [description]
-    :type video_path: [type]
-    :param out_path: [description], defaults to None
-    :type out_path: [type], optional
-    """
-    if not out_path:
+def rotate_video(video_path, rotate_angle, scale=1.0, out_path=None, fps=30.0):
+    if out_path in [None, '']:
         video_path_split = video_path.split('.')
-        if search_area_path != None:
+        video_path_split[-2] += '+Rotated'
+        out_path = '.'.join(video_path_split)
+    video = cv.VideoCapture(video_path)
+    ret, frame = video.read()
+    if not ret:
+        return
+    height, width, _ = frame.shape
+
+    frameSize = (height, width)
+    fourcc = cv.VideoWriter_fourcc(*'MJPG')
+    output = cv.VideoWriter(out_path, fourcc=fourcc,
+                            fps=fps, frameSize=frameSize)
+
+    M = cv.getRotationMatrix2D((width/2, height/2), rotate_angle, scale)
+
+    while ret:
+        frame = np.rot90(frame, -1)
+        output.write(frame)
+        ret, frame = video.read()
+
+    video.release()
+    output.release()
+    cv.destroyAllWindows()
+
+
+def overlap_bbox_on_video(video_path, bbox_path, bbox_flag_path, search_area_path, out_path=None, thickness=5, fps=30.0, extra='', debug=False):
+    if out_path in [None, '']:
+        video_path_split = video_path.split('.')
+        video_path_split[-2] += "+BBox"
+        if not search_area_path in [None, '']:
             video_path_split[-2] += "+Search_Area"
-        video_path_split[-2] += "+BBox" + flag
+        video_path_split[-2] += extra
         out_path = '.'.join(video_path_split)
         out_path = out_path.replace('mp4', 'avi')
 
@@ -94,15 +116,16 @@ def overlap_bbox_on_video(bbox_path, bbox_flag_path, video_path, out_path=None, 
     bbox_flag_file = open(bbox_flag_path)
     bbox_flag_lines = bbox_flag_file.readlines()
 
-    if search_area_path != None:
+    if not search_area_path in [None, '']:
         search_area_file = open(search_area_path)
 
     video = cv.VideoCapture(video_path)
     ret, frame = video.read()
+    if not ret:
+        return
 
     height, width, _ = frame.shape
     frameSize = (width, height)
-
     fourcc = cv.VideoWriter_fourcc(*'MJPG')
     output = cv.VideoWriter(out_path, fourcc=fourcc,
                             fps=fps, frameSize=frameSize)
@@ -119,21 +142,24 @@ def overlap_bbox_on_video(bbox_path, bbox_flag_path, video_path, out_path=None, 
                 l, b, w, h = tuple(map(int, search_area_line.split()))
                 left_corner, right_corner = (l, b), (l+w, b+h)
                 cv.rectangle(frame_copy, left_corner, right_corner,
-                             color=_bbox_colors['search'], thickness=2)
+                             color=_bbox_colors['search'], thickness=thickness)
 
         l, b, w, h = tuple(map(int, line.split()))
         left_corner, right_corner = (l, b), (l+w, b+h)
 
         cv.rectangle(frame_copy, left_corner, right_corner,
-                     color=_bbox_colors[bbox_flag_lines[i][:-1]], thickness=2)
+                     color=_bbox_colors[bbox_flag_lines[i][:-1]], thickness=thickness)
         output.write(frame_copy)
 
     bbox_file.close()
-    if search_area_path != None:
+    bbox_flag_file.close()
+    if not search_area_path in [None, '']:
         search_area_file.close()
     video.release()
     output.release()
     cv.destroyAllWindows()
+
+    return out_path
 
 
 def merge_videos(in_paths, out_path, fps=30.0, mode='horizontal'):
@@ -178,22 +204,32 @@ def merge_videos(in_paths, out_path, fps=30.0, mode='horizontal'):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Run converter from images to videos.')
+        description='Run converter to create new video.')
+    parser.add_argument('mode', type=str,
+                        help='Name of the video generation method.')
+    parser.add_argument('--debug', type=bool, default=False)
+    parser.add_argument('--input_video', type=str,
+                        default='', help='Path of the input video to be modified.')
+    parser.add_argument('--input_bbox', type=str,
+                        default='', help='Path of the bounding box of the input video.')
+    parser.add_argument('--input_flag', type=str, default='',
+                        help='Path of the flag of the bounding box.')
+    parser.add_argument('--input_search', type=str, default='',
+                        help='Path of the search area of the input video.')
+    parser.add_argument('--output_video', type=str,
+                        default='', help='Path of the output video.')
+    parser.add_argument('--rotate', type=bool, default=False,
+                        help='If rotate the output video.')
+    parser.add_argument('--angle', type=float, default=-90.0,
+                        help='The rotating angle of the input video.')
     parser.add_argument('--tracker_name', type=str,
                         default='dimp', help='Name of tracking method.')
     parser.add_argument('--tracker_param', type=str,
                         default='dimp50', help='Name of parameter file.')
-    parser.add_argument('--create_method', type=str, default='merge',
-                        help='Name of the video generation method.')
 
     args = parser.parse_args()
 
-    # try:
-    #     seq_name = int(args.sequence)
-    # except:
-    #     seq_name = args.sequence
-
-    if args.create_method == 'image2video':
+    if args.mode == 'image2video':
         tracking_results_path = "/home/sifan/Documents/Zhang/pytracking/pytracking/tracking_results"
         tracking_results_path += "/" + args.tracker_name
         tracking_results_path += "/" + args.tracker_param
@@ -211,18 +247,20 @@ def main():
         for file, path in zip(file_list, path_list):
             convert_images_to_video(
                 path, path+'/'+file+'.avi', fps=30.0, frameSize=None, image_type='jpg')
-    elif args.create_method == 'bbox2video':
+    elif args.mode == 'bbox':
         print("Creating video from bounding boxes.")
-        bbox_path = '/home/sifan/Documents/pytracking/pytracking/tracking_results/dimp/dimp50/video_Office_001_960x540.txt'
-        bbox_flag_path = '/home/sifan/Documents/pytracking/pytracking/tracking_results/dimp/dimp50/video_Office_001_960x540_Flag.txt'
-        video_path = '/home/sifan/Documents/pytracking/pytracking/datasets/Videos/Office/Office_001_960x540.mp4'
-        search_area_path = '/home/sifan/Documents/pytracking/pytracking/tracking_results/dimp/dimp50/video_Office_001_960x540_Search_Area.txt'
         search_area_scale = input("What is the search area scale: ")
         sample_memory_size = input("What is the sample memory size: ")
-        flag = input("Extra information: ")
-        overlap_bbox_on_video(bbox_path, bbox_flag_path, video_path, search_area_path=search_area_path,
-                              flag='+Sample_Memory_size={}+Search_Area_Scale={}'.format(sample_memory_size, search_area_scale) + flag if flag == '' else ('+'+flag))
-    elif args.create_method == 'merge':
+        extra = input("Extra information: ")
+        if extra != '':
+            extra = '+' + extra
+        extra = '+Sample_Memory_size={}+Search_Area_Scale={}'.format(
+            sample_memory_size, search_area_scale) + extra
+        out_path = overlap_bbox_on_video(args.input_video, args.input_bbox, args.input_flag, args.input_search,
+                                         thickness=8, extra=extra)
+        if args.rotate:
+            rotate_video(out_path, args.angle)
+    elif args.mode == 'merge':
         print("Merging videos.")
         in_paths = []
         in_paths.append(
